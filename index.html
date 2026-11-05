@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -20,7 +19,6 @@ html
 <body>
 
 <div class="container">
-    <!-- КРОК 1: Реєстрація учня -->
     <div id="auth-block">
         <h2>Вхід до тесту</h2>
         <p>Будь ласка, введіть ваше прізвище та ім'я. Під час тесту заборонено залишати вкладку браузера!</p>
@@ -29,9 +27,7 @@ html
         <button class="btn" onclick="startTest()">Почати тест</button>
     </div>
 
-    <!-- КРОК 2: Тіло тесту з лічильником -->
     <form id="test-form" class="hidden">
-        <!-- ПРИХОВАНІ ПОЛЯ ДЛЯ СЕРВІСУ ВЕБ-ФОРМ -->
         <input type="hidden" name="access_key" value="2d9047c1-1fe7-4337-9229-8202ae941abc">
         <input type="hidden" name="subject" value="Результати онлайн-тесту">
         <input type="hidden" id="form-student-name" name="Учень">
@@ -43,7 +39,6 @@ html
         </div>
 
         <div id="quiz-questions">
-            <!-- ЗАПИТАННЯ 1 -->
             <div class="question">
                 <p><strong>1. Яка планета є третьою від Сонця?</strong></p>
                 <label><input type="radio" name="q1" value="wrong"> Марс</label><br>
@@ -51,7 +46,6 @@ html
                 <label><input type="radio" name="q1" value="wrong"> Венера</label>
             </div>
 
-            <!-- ЗАПИТАННЯ 2 -->
             <div class="question">
                 <p><strong>2. Скільки буде 5 помножити на 6?</strong></p>
                 <label><input type="radio" name="q2" value="wrong"> 25</label><br>
@@ -63,7 +57,6 @@ html
         <button type="button" class="btn" onclick="finishTest()">Завершити тест та надіслати результати</button>
     </form>
 
-    <!-- КРОК 3: Фінал -->
     <div id="final-block" class="hidden">
         <h3 id="final-message">Дякуємо! Ваші результати успішно відправлені вчителю.</h3>
     </div>
@@ -74,7 +67,6 @@ html
     const maxExits = 3;
     let testStarted = false;
 
-    // Початок тесту
     function startTest() {
         const nameInput = document.getElementById('student_name').value.trim();
         if (nameInput === "") {
@@ -87,7 +79,6 @@ html
         testStarted = true;
     }
 
-    // Логіка лічильника виходів
     function handleUserExit() {
         if (!testStarted) return;
         
@@ -104,7 +95,6 @@ html
         }
     }
 
-    // Слухачі подій виходу
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') handleUserExit();
     });
@@ -112,15 +102,13 @@ html
         setTimeout(() => { if(document.activeElement.tagName !== "INPUT") handleUserExit(); }, 200);
     });
 
-    // Підрахунок балів та ручне завершення
     function finishTest() {
         if (!testStarted) return;
         testStarted = false;
 
         let score = 0;
-        const totalQuestions = 2; // Змініть, якщо додаєте питання
+        const totalQuestions = 2;
 
-        // Перевірка відповідей
         const q1 = document.querySelector('input[name="q1"]:checked');
         const q2 = document.querySelector('input[name="q2"]:checked');
 
@@ -130,7 +118,6 @@ html
         autoSubmit(score, `Тест завершено. Результат: ${score} з ${totalQuestions} балів.`);
     }
 
-    // Автоматичне відправлення даних на Web3Forms
     function autoSubmit(finalScore, userMessage) {
         document.getElementById('form-score').value = finalScore;
         document.getElementById('test-form').classList.add('hidden');
