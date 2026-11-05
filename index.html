@@ -1,0 +1,159 @@
+html
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн-тестування</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 600px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: auto; }
+        h2, h3 { color: #333; }
+        .warning { color: red; font-weight: bold; }
+        .btn { background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn:hover { background: #218838; }
+        .question { margin-bottom: 20px; padding: 15px; background: #fafafa; border-radius: 5px; border-left: 5px solid #007bff; }
+        .hidden { display: none; }
+        input[type="text"] { width: 100%; padding: 10px; margin: 10px 0 20px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- КРОК 1: Реєстрація учня -->
+    <div id="auth-block">
+        <h2>Вхід до тесту</h2>
+        <p>Будь ласка, введіть ваше прізвище та ім'я. Під час тесту заборонено залишати вкладку браузера!</p>
+        <label for="student_name">Прізвище та Ім'я учня:</label>
+        <input type="text" id="student_name" placeholder="Наприклад: Іванов Петро" required>
+        <button class="btn" onclick="startTest()">Почати тест</button>
+    </div>
+
+    <!-- КРОК 2: Тіло тесту з лічильником -->
+    <form id="test-form" class="hidden">
+        <!-- ПРИХОВАНІ ПОЛЯ ДЛЯ СЕРВІСУ ВЕБ-ФОРМ -->
+        <input type="hidden" name="access_key" value="2d9047c1-1fe7-4337-9229-8202ae941abc">
+        <input type="hidden" name="subject" value="Результати онлайн-тесту">
+        <input type="hidden" id="form-student-name" name="Учень">
+        <input type="hidden" id="form-exit-count" name="Кількість виходів з вікна" value="0">
+        <input type="hidden" id="form-score" name="Набрано балів" value="0">
+
+        <div style="background: #eef2f7; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+            Порушень (виходів з вікна): <span id="counter-display" class="warning">0</span> / 3
+        </div>
+
+        <div id="quiz-questions">
+            <!-- ЗАПИТАННЯ 1 -->
+            <div class="question">
+                <p><strong>1. Яка планета є третьою від Сонця?</strong></p>
+                <label><input type="radio" name="q1" value="wrong"> Марс</label><br>
+                <label><input type="radio" name="q1" value="correct"> Земля</label><br>
+                <label><input type="radio" name="q1" value="wrong"> Венера</label>
+            </div>
+
+            <!-- ЗАПИТАННЯ 2 -->
+            <div class="question">
+                <p><strong>2. Скільки буде 5 помножити на 6?</strong></p>
+                <label><input type="radio" name="q2" value="wrong"> 25</label><br>
+                <label><input type="radio" name="q2" value="wrong"> 35</label><br>
+                <label><input type="radio" name="q2" value="correct"> 30</label>
+            </div>
+        </div>
+
+        <button type="button" class="btn" onclick="finishTest()">Завершити тест та надіслати результати</button>
+    </form>
+
+    <!-- КРОК 3: Фінал -->
+    <div id="final-block" class="hidden">
+        <h3 id="final-message">Дякуємо! Ваші результати успішно відправлені вчителю.</h3>
+    </div>
+</div>
+
+<script>
+    let exitCount = 0;
+    const maxExits = 3;
+    let testStarted = false;
+
+    // Початок тесту
+    function startTest() {
+        const nameInput = document.getElementById('student_name').value.trim();
+        if (nameInput === "") {
+            alert("Будь ласка, введіть своє ім'я!");
+            return;
+        }
+        document.getElementById('form-student-name').value = nameInput;
+        document.getElementById('auth-block').classList.add('hidden');
+        document.getElementById('test-form').classList.remove('hidden');
+        testStarted = true;
+    }
+
+    // Логіка лічильника виходів
+    function handleUserExit() {
+        if (!testStarted) return;
+        
+        exitCount++;
+        document.getElementById('counter-display').innerText = exitCount;
+        document.getElementById('form-exit-count').value = exitCount;
+
+        if (exitCount >= maxExits) {
+            testStarted = false;
+            alert("Тест автоматично заблоковано за перевищення ліміту виходів (3 спроби)!");
+            autoSubmit(0, "БЛОКУВАННЯ ЗА СПИСУВАННЯ (0 балів)");
+        } else {
+            alert(`Попередження! Ви залишили сторінку тесту. Спробу зафіксовано (${exitCount}/${maxExits}).`);
+        }
+    }
+
+    // Слухачі подій виходу
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') handleUserExit();
+    });
+    window.addEventListener('blur', () => {
+        setTimeout(() => { if(document.activeElement.tagName !== "INPUT") handleUserExit(); }, 200);
+    });
+
+    // Підрахунок балів та ручне завершення
+    function finishTest() {
+        if (!testStarted) return;
+        testStarted = false;
+
+        let score = 0;
+        const totalQuestions = 2; // Змініть, якщо додаєте питання
+
+        // Перевірка відповідей
+        const q1 = document.querySelector('input[name="q1"]:checked');
+        const q2 = document.querySelector('input[name="q2"]:checked');
+
+        if (q1 && q1.value === "correct") score++;
+        if (q2 && q2.value === "correct") score++;
+
+        autoSubmit(score, `Тест завершено. Результат: ${score} з ${totalQuestions} балів.`);
+    }
+
+    // Автоматичне відправлення даних на Web3Forms
+    function autoSubmit(finalScore, userMessage) {
+        document.getElementById('form-score').value = finalScore;
+        document.getElementById('test-form').classList.add('hidden');
+        document.getElementById('final-block').classList.remove('hidden');
+        document.getElementById('final-message').innerText = userMessage + " Йде відправка звіту вчителю...";
+
+        const formData = new FormData(document.getElementById('test-form'));
+
+        fetch('https://web3forms.com', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById('final-message').innerText = userMessage + " Результати успішно збережено на пошті вчителя.";
+            } else {
+                document.getElementById('final-message').innerText = "Помилка відправки. Зробіть скріншот екрану та покажіть вчителю. " + userMessage;
+            }
+        })
+        .catch(error => {
+            document.getElementById('final-message').innerText = "Помилка мережі. Зробіть скріншот екрану. " + userMessage;
+        });
+    }
+</script>
+</body>
+</html>
